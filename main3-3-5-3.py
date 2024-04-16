@@ -27,15 +27,9 @@ TSensor = TouchSensor(Port.S1)
 UltraSensor = UltrasonicSensor(Port.S4)
 CSensor = ColorSensor(Port.S3)
 
-MQTT_ClientID = 'mybot'
-MQTT_Broker = '172.20.10.3'
+MQTT_ClientID = 'otherbot'
+MQTT_Broker = '172.20.10.4'
 MQTT_Topic_Status = 'Lego/Status'
-
-def mqtt_callback(topic, msg):
-    # Convert the message to a string and display it on the EV3 screen
-    ev3.screen.clear()
-    ev3.screen.print("{}".format(msg.decode()))
-
 client = MQTTClient(MQTT_ClientID, MQTT_Broker, 1883)
 
 working = True
@@ -44,34 +38,30 @@ count = 0
 # while True:
 # robot.straight(20000)
 
-# listen
-client.set_callback(mqtt_callback)
-while True:
-    client.connect()
-    time.sleep(1)
-    client.publish(MQTT_Topic_Status, 'Started')
-    ev3.screen.clear()
-    ev3.screen.print('Started')
-    # ev3.screen.set_callback(listen)
-    client.subscribe(MQTT_Topic_Status)
-    time.sleep(1)
-    client.publish(MQTT_Topic_Status, 'Hello World')
-    client.wait_msg()
-    client.check_msg()
-    # ev3.screen.set_callback(listen)
-    # if topic == MQTT_Topic_Status.encode():
-    #     ev3.screen.print(str(msg.decode()))
-    # ev3.screen.print('Hello World')
+def listen(topic,msg):
+    if topic == MQTT_Topic_Status.encode():
+        ev3.screen.print(str(msg.decode()))
 
-# while working:
-#     left_motor.run(360)
-#     right_motor.run(360)
-#     if UltraSensor.distance() < 300:
-#         left_motor.stop()
-#         right_motor.stop()
-#         client.publish(MQTT_Topic_Status, 'I just stopped!')
-#         client.check_msg()
-#         time.sleep(1)
+client.connect()
+time.sleep(1)
+client.publish(MQTT_Topic_Status, 'Started')
+ev3.screen.clear()
+ev3.screen.print('Started')
+ev3.screen.set_callback(listen)
+client.subscribe(MQTT_Topic_Status)
+time.sleep(1)
+client.publish(MQTT_Topic_Status, 'Listening')
+ev3.screen.print('Listening')
+
+while working:
+    left_motor.run(360)
+    right_motor.run(360)
+    if UltraSensor.distance() < 300:
+        left_motor.stop()
+        right_motor.stop()
+        client.publish(MQTT_Topic_Status, 'I just stopped!')
+        client.check_msg()
+        time.sleep(1)
 
 
 # robot.straight(1000)

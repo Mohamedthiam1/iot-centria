@@ -35,10 +35,16 @@ def mqtt_callback(topic, msg):
     # Convert the message to a string and display it on the EV3 screen
     ev3.screen.clear()
     ev3.screen.print("{}".format(msg.decode()))
+    if msg.decode() == 'Go ahead':
+        ev3.speaker.play_notes(["E4/4"])
+        time.sleep(1)
+
 
 client = MQTTClient(MQTT_ClientID, MQTT_Broker, 1883)
 
 working = True
+
+text = 'Hello, World.'
 
 count = 0
 # while True:
@@ -46,16 +52,17 @@ count = 0
 
 # listen
 client.set_callback(mqtt_callback)
-while True:
+while working:
     client.connect()
     time.sleep(1)
     client.publish(MQTT_Topic_Status, 'Started')
-    ev3.screen.clear()
-    ev3.screen.print('Started')
-    # ev3.screen.set_callback(listen)
+    ev3.speaker.play_notes(["C4/4"])
+    text = 'Go ahead'
+    time.sleep(1)
+
     client.subscribe(MQTT_Topic_Status)
     time.sleep(1)
-    client.publish(MQTT_Topic_Status, 'Hello World')
+    client.publish(MQTT_Topic_Status, text)
     client.wait_msg()
     client.check_msg()
     # ev3.screen.set_callback(listen)

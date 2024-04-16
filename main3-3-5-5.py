@@ -21,6 +21,18 @@ left_motor = Motor(Port.B)
 right_motor = Motor(Port.C)
 speed = 150
 
+
+color_to_binary = {
+    "BLACK": '00000',
+    "WHITE": '00001',
+    "RED": '00010',
+    "YELLOW": '00011',
+    "GREEN": '00100',
+    "BLUE": '00101'
+}
+
+
+
 robot = DriveBase(left_motor, right_motor, wheel_diameter=60, axle_track=105)
 
 TSensor = TouchSensor(Port.S1)
@@ -33,12 +45,31 @@ MQTT_Topic_Status = 'Lego/Status'
 
 def mqtt_callback(topic, msg):
     # Convert the message to a string and display it on the EV3 screen
+    decodedText = 'None'
     ev3.screen.clear()
     ev3.screen.print("{}".format(msg.decode()))
+    wholeList = msg.decode().split(',')
+    for color_str in wholeList:
+        color_name = color_str.split('.')[-1]
+        if color_name == "BLACK":
+            continue
+        binary = color_to_binary[color_name]
+        decimal = int(binary, 2)
+        ascii_char = chr(decimal)
+        decodedText += ascii_char
+
+    print(decodedText)
+
 
 client = MQTTClient(MQTT_ClientID, MQTT_Broker, 1883)
 
 working = True
+
+text = 'Hello, World.'
+
+colorsDetected = []
+
+numberOfLoops = 0
 
 count = 0
 # while True:
@@ -46,18 +77,23 @@ count = 0
 
 # listen
 client.set_callback(mqtt_callback)
-while True:
+while working:
+    numberOfLoops = numberOfLoops + 1
+    detected_color = CSensor.color()
     client.connect()
-    time.sleep(1)
     client.publish(MQTT_Topic_Status, 'Started')
-    ev3.screen.clear()
-    ev3.screen.print('Started')
-    # ev3.screen.set_callback(listen)
-    client.subscribe(MQTT_Topic_Status)
-    time.sleep(1)
-    client.publish(MQTT_Topic_Status, 'Hello World')
+    colorsDetected.append(str(detected_color))
+    time.sleep(0.5)
+
+    if numberOfLoops == 10:
+        client.subscribe(MQTT_Topic_Status)
+        time.sleep(1)
+        chaine = ",".join(colorsDetected)
+        client.publish(MQTT_Topic_Status, chaine)
     client.wait_msg()
     client.check_msg()
+    if numberOfLoops >= 10:
+        working = False
     # ev3.screen.set_callback(listen)
     # if topic == MQTT_Topic_Status.encode():
     #     ev3.screen.print(str(msg.decode()))

@@ -35,10 +35,22 @@ def mqtt_callback(topic, msg):
     # Convert the message to a string and display it on the EV3 screen
     ev3.screen.clear()
     ev3.screen.print("{}".format(msg.decode()))
+    if msg.decode() == 'Drive away':
+        left_motor.stop()
+        right_motor.run(200)
+        time.sleep(2)
+        left_motor.run(360)
+        right_motor.run(360)
+        client.subscribe(MQTT_Topic_Status)
+        client.publish(MQTT_Topic_Status, 'Continue!')
+
+
 
 client = MQTTClient(MQTT_ClientID, MQTT_Broker, 1883)
 
 working = True
+
+text = 'Hello, World.'
 
 count = 0
 # while True:
@@ -46,16 +58,20 @@ count = 0
 
 # listen
 client.set_callback(mqtt_callback)
-while True:
+while working:
     client.connect()
     time.sleep(1)
     client.publish(MQTT_Topic_Status, 'Started')
-    ev3.screen.clear()
-    ev3.screen.print('Started')
-    # ev3.screen.set_callback(listen)
+    left_motor.run(360)
+    right_motor.run(360)
+    if UltraSensor.distance() < 200:
+        left_motor.stop()
+        right_motor.stop()
+        text = 'Drive away'
+
     client.subscribe(MQTT_Topic_Status)
     time.sleep(1)
-    client.publish(MQTT_Topic_Status, 'Hello World')
+    client.publish(MQTT_Topic_Status, text)
     client.wait_msg()
     client.check_msg()
     # ev3.screen.set_callback(listen)

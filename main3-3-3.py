@@ -35,10 +35,25 @@ def mqtt_callback(topic, msg):
     # Convert the message to a string and display it on the EV3 screen
     ev3.screen.clear()
     ev3.screen.print("{}".format(msg.decode()))
+    if msg.decode() == 'Stop now':
+        left_motor.stop()
+        right_motor.stop()
+    elif msg.decode() == 'Center pressed':
+        left_motor.stop()
+        right_motor.stop()
+    elif msg.decode() == 'Up pressed':
+        left_motor.run(360)
+        right_motor.run(360)
+    elif msg.decode() == 'Down pressed':
+        left_motor.run(-360)
+        right_motor.run(-360)
+
 
 client = MQTTClient(MQTT_ClientID, MQTT_Broker, 1883)
 
 working = True
+
+text = 'Hello, World.'
 
 count = 0
 # while True:
@@ -46,16 +61,29 @@ count = 0
 
 # listen
 client.set_callback(mqtt_callback)
-while True:
+while working:
     client.connect()
     time.sleep(1)
     client.publish(MQTT_Topic_Status, 'Started')
-    ev3.screen.clear()
-    ev3.screen.print('Started')
-    # ev3.screen.set_callback(listen)
+    if(len(ev3.buttons.pressed()) and ev3.buttons.pressed()[0] == Button.CENTER):
+        client.publish(MQTT_Topic_Status, 'Center pressed')
+        text = 'Center pressed'
+    elif(len(ev3.buttons.pressed()) and ev3.buttons.pressed()[0] == Button.RIGHT):
+        client.publish(MQTT_Topic_Status, 'Right pressed')
+        text = 'Right pressed'
+    elif(len(ev3.buttons.pressed()) and ev3.buttons.pressed()[0] == Button.LEFT):
+        client.publish(MQTT_Topic_Status, 'Left pressed')
+        text = 'Left pressed'
+    elif(len(ev3.buttons.pressed()) and ev3.buttons.pressed()[0] == Button.DOWN):
+        client.publish(MQTT_Topic_Status, 'Down pressed')
+        text = 'Down pressed'
+    elif(len(ev3.buttons.pressed()) and ev3.buttons.pressed()[0] == Button.UP):
+        client.publish(MQTT_Topic_Status, 'Up pressed')
+        text = 'Up pressed'
+
     client.subscribe(MQTT_Topic_Status)
     time.sleep(1)
-    client.publish(MQTT_Topic_Status, 'Hello World')
+    client.publish(MQTT_Topic_Status, text)
     client.wait_msg()
     client.check_msg()
     # ev3.screen.set_callback(listen)
